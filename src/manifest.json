@@ -13,7 +13,12 @@
   "content_scripts": [
     {
       "js": ["src/content.ts"],
-      "matches": ["https://*.x.com/*", "https://*.twitter.com/*"]
+      "matches": [
+        "https://x.com/*",
+        "https://*.x.com/*",
+        "https://twitter.com/*",
+        "https://*.twitter.com/*"
+      ]
     }
   ],
   "permissions": ["storage"],
