@@ -236,23 +236,22 @@ function findEditor(toolbar: HTMLElement): HTMLElement | null {
 function insertTextIntoEditor(editor: HTMLElement, text: string) {
   editor.focus();
 
-  // Primary insertion method for Draft.js
   try {
-    const success = document.execCommand('insertText', false, text);
-    if (success) return;
+    document.execCommand('insertText', false, text);
+    console.log('Successfully inserted text via execCommand.');
   } catch (err) {
-    console.warn('execCommand failed:', err);
+    console.warn('execCommand failed, attempting fallback paste event:', err);
+    
+    // Fallback paste injection method
+    const dt = new DataTransfer();
+    dt.setData('text/plain', text);
+    const pasteEvent = new ClipboardEvent('paste', {
+      clipboardData: dt,
+      bubbles: true,
+      cancelable: true
+    });
+    editor.dispatchEvent(pasteEvent);
   }
-
-  // Fallback paste injection method
-  const dt = new DataTransfer();
-  dt.setData('text/plain', text);
-  const pasteEvent = new ClipboardEvent('paste', {
-    clipboardData: dt,
-    bubbles: true,
-    cancelable: true
-  });
-  editor.dispatchEvent(pasteEvent);
 }
 
 // Helper to locate X's toolbars with robust selectors and fallback logic
