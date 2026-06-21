@@ -51,10 +51,7 @@ Tweet Context:
     body: JSON.stringify({
       contents: [{
         parts: [{ text: prompt }]
-      }],
-      generation_config: {
-        response_mime_type: 'application/json'
-      }
+      }]
     }),
   });
 
@@ -72,7 +69,19 @@ Tweet Context:
   }
 
   try {
-    const parsed = JSON.parse(rawText.trim());
+    // Clean up markdown code blocks if the model wrapped the JSON
+    let cleaned = rawText.trim();
+    if (cleaned.startsWith('```json')) {
+      cleaned = cleaned.substring(7);
+    } else if (cleaned.startsWith('```')) {
+      cleaned = cleaned.substring(3);
+    }
+    if (cleaned.endsWith('```')) {
+      cleaned = cleaned.substring(0, cleaned.length - 3);
+    }
+    cleaned = cleaned.trim();
+
+    const parsed = JSON.parse(cleaned);
     if (Array.isArray(parsed) && parsed.length === 3 && parsed.every(item => typeof item === 'string')) {
       return parsed;
     }
