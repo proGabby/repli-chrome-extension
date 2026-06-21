@@ -255,9 +255,35 @@ function insertTextIntoEditor(editor: HTMLElement, text: string) {
   editor.dispatchEvent(pasteEvent);
 }
 
+// Helper to locate X's toolbars with robust selectors and fallback logic
+function findToolbars(): HTMLElement[] {
+  const list: HTMLElement[] = [];
+
+  // Selector 1: Standard data-testid toolbar
+  const directToolbars = document.querySelectorAll('div[data-testid="toolBar"], div[data-testid="toolbar"]');
+  directToolbars.forEach((el) => {
+    if (el instanceof HTMLElement) {
+      list.push(el);
+    }
+  });
+
+  // Selector 2: Fallback via Emoji button parent container
+  const emojiButtons = document.querySelectorAll('[data-testid="emojiButton"], [aria-label="Emoji"], [aria-label="Add GIF"]');
+  emojiButtons.forEach((btn) => {
+    const parent = btn.parentElement;
+    if (parent instanceof HTMLElement && !list.includes(parent)) {
+      list.push(parent);
+    }
+  });
+
+  return list;
+}
+
 // Action handler for button clicks
 function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement) {
+  console.log('AI Button clicked. Locating context...');
   const tweetText = extractTweetText(toolbar);
+  console.log('Extracted Tweet Text context:', tweetText);
   
   if (!tweetText) {
     dropdown.innerHTML = `<div class="error-msg">Could not extract tweet text context.</div>`;
@@ -275,15 +301,19 @@ function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement) {
   // Fetch tone settings from storage first
   chrome.storage.local.get(['x_ai_reply_default_tone'], (settings) => {
     const tone = settings.x_ai_reply_default_tone || 'supportive';
+    console.log('Sending message to background script for tone:', tone);
     
     // Dispatch message to background service worker
     chrome.runtime.sendMessage(
       { action: 'generate_replies', tweetText, tone },
       (response) => {
         if (chrome.runtime.lastError) {
+          console.error('Runtime message error:', chrome.runtime.lastError);
           dropdown.innerHTML = `<div class="error-msg">Connection error. Please reload X.com and try again.</div>`;
           return;
         }
+
+        console.log('Received response from background script:', response);
 
         if (response && response.success && Array.isArray(response.replies)) {
           // Render options list
@@ -303,9 +333,11 @@ function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement) {
               
               const editor = findEditor(toolbar);
               if (editor) {
+                console.log('Inserting text into editor...');
                 insertTextIntoEditor(editor, replyText);
                 dropdown.classList.remove('show');
               } else {
+                console.warn('Active editor not found.');
                 alert('Could not find active reply textbox. Please click inside X\'s reply box first.');
               }
             });
@@ -316,6 +348,7 @@ function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement) {
           dropdown.appendChild(optionsContainer);
         } else {
           const errorMsg = response?.error || 'Unknown error occurred.';
+          console.error('AI reply generation failed:', errorMsg);
           
           if (errorMsg.includes('API key')) {
             dropdown.innerHTML = `
@@ -334,13 +367,13 @@ function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement) {
 
 // Set up MutationObserver to detect reply box toolbars dynamically
 function observeDOM() {
+  console.log('Setting up MutationObserver to watch X.com DOM updates...');
+  
   const observer = new MutationObserver(() => {
-    const toolbars = document.querySelectorAll('div[data-testid="toolBar"]');
-    toolbars.forEach((el) => {
-      if (el instanceof HTMLElement) {
-        injectAIButton(el);
-      }
-    });
+    const toolbars = findToolbars();
+    if (toolbars.length > 0) {
+      toolbars.forEach((el) => injectAIButton(el));
+    }
   });
 
   observer.observe(document.body, {
@@ -349,12 +382,9 @@ function observeDOM() {
   });
 
   // Initial check
-  const toolbars = document.querySelectorAll('div[data-testid="toolBar"]');
-  toolbars.forEach((el) => {
-    if (el instanceof HTMLElement) {
-      injectAIButton(el);
-    }
-  });
+  const toolbars = findToolbars();
+  console.log(`Initial scan: found ${toolbars.length} toolbars.`);
+  toolbars.forEach((el) => injectAIButton(el));
 }
 
 // Initialize observer
