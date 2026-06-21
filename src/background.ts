@@ -58,6 +58,20 @@ Tweet Context:
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     const message = errorData?.error?.message || `HTTP error! status: ${response.status}`;
+    
+    // Log available models for debugging
+    try {
+      const listUrl = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`;
+      const listRes = await fetch(listUrl);
+      if (listRes.ok) {
+        const listData = await listRes.json();
+        const modelNames = listData.models?.map((m: any) => m.name) || [];
+        console.warn('Supported models list for this API Key:', modelNames);
+      }
+    } catch (listErr) {
+      console.error('Failed to list supported models:', listErr);
+    }
+
     throw new Error(`Gemini API Error: ${message}`);
   }
 
