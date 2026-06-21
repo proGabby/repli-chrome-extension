@@ -1,5 +1,5 @@
 // Background Service Worker Entry Point
-import { handleReplyGeneration } from './background/api';
+import { handleReplyGeneration } from './api';
 
 // Listen for messages from the content script
 chrome.runtime.onMessage.addListener((request, _sender, sendResponse) => {

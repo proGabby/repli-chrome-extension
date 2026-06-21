@@ -1,6 +1,6 @@
 // X AI Reply Content Script Entry Point
-import { findToolbars } from './content/dom';
-import { injectAIButton } from './content/ui';
+import { findToolbars } from './dom';
+import { injectAIButton } from './ui';
 
 // Set up MutationObserver to detect reply box toolbars dynamically
 function observeDOM() {
