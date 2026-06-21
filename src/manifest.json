@@ -1,0 +1,26 @@
+{
+  "manifest_version": 3,
+  "name": "X AI Reply Assistant",
+  "version": "1.0.0",
+  "description": "Generate AI replies directly on X/Twitter",
+  "action": {
+    "default_popup": "src/popup.html"
+  },
+  "background": {
+    "service_worker": "src/background.ts",
+    "type": "module"
+  },
+  "content_scripts": [
+    {
+      "js": ["src/content.ts"],
+      "matches": ["https://*.x.com/*", "https://*.twitter.com/*"]
+    }
+  ],
+  "permissions": ["storage"],
+  "host_permissions": [
+    "https://*.x.com/*",
+    "https://*.twitter.com/*",
+    "https://generativelanguage.googleapis.com/*",
+    "https://api.openai.com/*"
+  ]
+}
