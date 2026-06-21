@@ -237,12 +237,8 @@ function insertTextIntoEditor(editor: HTMLElement, text: string) {
   editor.focus();
 
   try {
-    document.execCommand('insertText', false, text);
-    console.log('Successfully inserted text via execCommand.');
-  } catch (err) {
-    console.warn('execCommand failed, attempting fallback paste event:', err);
-    
-    // Fallback paste injection method
+    // Primary method: Dispatch a Clipboard Event (paste)
+    // Draft.js intercepts this event, calls preventDefault(), and updates the state once.
     const dt = new DataTransfer();
     dt.setData('text/plain', text);
     const pasteEvent = new ClipboardEvent('paste', {
@@ -250,7 +246,23 @@ function insertTextIntoEditor(editor: HTMLElement, text: string) {
       bubbles: true,
       cancelable: true
     });
-    editor.dispatchEvent(pasteEvent);
+    
+    const dispatched = editor.dispatchEvent(pasteEvent);
+    // If the event was intercepted and default was prevented (returns false), it was handled.
+    if (!dispatched) {
+      console.log('Successfully inserted text via clipboard paste event.');
+      return;
+    }
+  } catch (err) {
+    console.warn('Clipboard paste event failed, attempting fallback execCommand:', err);
+  }
+
+  // Fallback method: execCommand
+  try {
+    document.execCommand('insertText', false, text);
+    console.log('Successfully inserted text via fallback execCommand.');
+  } catch (err) {
+    console.error('Fallback execCommand failed:', err);
   }
 }
 
