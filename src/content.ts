@@ -12,21 +12,21 @@ const AI_ICON_SVG = `
 
 // Helper to inject the AI Reply button
 function injectAIButton(toolbar: HTMLElement) {
-  if (injectedToolbars.has(toolbar)) return;
-  injectedToolbars.add(toolbar);
+    if (injectedToolbars.has(toolbar)) return;
+    injectedToolbars.add(toolbar);
 
-  // Create container for the Shadow DOM
-  const container = document.createElement('div');
-  container.className = 'x-ai-reply-btn-container';
-  container.style.display = 'inline-flex';
-  container.style.alignItems = 'center';
+    // Create container for the Shadow DOM
+    const container = document.createElement('div');
+    container.className = 'x-ai-reply-btn-container';
+    container.style.display = 'inline-flex';
+    container.style.alignItems = 'center';
 
-  // Attach Shadow DOM
-  const shadowRoot = container.attachShadow({ mode: 'open' });
+    // Attach Shadow DOM
+    const shadowRoot = container.attachShadow({ mode: 'open' });
 
-  // Styles for the button inside Shadow DOM
-  const style = document.createElement('style');
-  style.textContent = `
+    // Styles for the button inside Shadow DOM
+    const style = document.createElement('style');
+    style.textContent = `
     .ai-btn {
       background: none;
       border: none;
@@ -50,108 +50,108 @@ function injectAIButton(toolbar: HTMLElement) {
     }
   `;
 
-  // Create button
-  const button = document.createElement('button');
-  button.type = 'button';
-  button.className = 'ai-btn';
-  button.title = 'Generate AI Reply';
-  button.innerHTML = AI_ICON_SVG;
+    // Create button
+    const button = document.createElement('button');
+    button.type = 'button';
+    button.className = 'ai-btn';
+    button.title = 'Generate AI Reply';
+    button.innerHTML = AI_ICON_SVG;
 
-  button.addEventListener('click', (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    handleAIClick(toolbar);
-  });
+    button.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        handleAIClick(toolbar);
+    });
 
-  shadowRoot.appendChild(style);
-  shadowRoot.appendChild(button);
+    shadowRoot.appendChild(style);
+    shadowRoot.appendChild(button);
 
-  // Insert the button in X's toolbar.
-  // The toolbar usually has the "Post" button at the far right, and action icons on the left.
-  // We can insert our button before the first element, or at a specific offset.
-  if (toolbar.firstChild) {
-    toolbar.insertBefore(container, toolbar.firstChild);
-  } else {
-    toolbar.appendChild(container);
-  }
+    // Insert the button in X's toolbar.
+    // The toolbar usually has the "Post" button at the far right, and action icons on the left.
+    // We can insert our button before the first element, or at a specific offset.
+    if (toolbar.firstChild) {
+        toolbar.insertBefore(container, toolbar.firstChild);
+    } else {
+        toolbar.appendChild(container);
+    }
 }
 
 // Helper to extract the text content of the tweet being replied to
 function extractTweetText(toolbar: HTMLElement): string {
-  // Scenario A: Reply is in a modal popup (e.g., clicking reply icon on feed)
-  const modal = toolbar.closest('[data-testid="sheetDialog"], [role="dialog"]');
-  if (modal) {
-    const tweetTextEl = modal.querySelector('[data-testid="tweetText"]');
-    if (tweetTextEl && tweetTextEl.textContent) {
-      return tweetTextEl.textContent.trim();
+    // Scenario A: Reply is in a modal popup (e.g., clicking reply icon on feed)
+    const modal = toolbar.closest('[data-testid="sheetDialog"], [role="dialog"]');
+    if (modal) {
+        const tweetTextEl = modal.querySelector('[data-testid="tweetText"]');
+        if (tweetTextEl && tweetTextEl.textContent) {
+            return tweetTextEl.textContent.trim();
+        }
     }
-  }
 
-  // Scenario B: Inline reply on a status detail page
-  // X structure places the composer inside a cell container. We go up and look for the preceding tweet.
-  let current: HTMLElement | null = toolbar;
-  while (current && current !== document.body) {
-    // Look for a preceding sibling that contains a tweet
-    let sibling = current.previousElementSibling;
-    while (sibling) {
-      const tweetTextEl = sibling.querySelector('[data-testid="tweetText"]');
-      if (tweetTextEl && tweetTextEl.textContent) {
-        return tweetTextEl.textContent.trim();
-      }
-      // If the sibling itself is the tweet
-      if (sibling.getAttribute('data-testid') === 'tweet') {
-        const text = sibling.querySelector('[data-testid="tweetText"]');
-        if (text && text.textContent) return text.textContent.trim();
-      }
-      sibling = sibling.previousElementSibling;
+    // Scenario B: Inline reply on a status detail page
+    // X structure places the composer inside a cell container. We go up and look for the preceding tweet.
+    let current: HTMLElement | null = toolbar;
+    while (current && current !== document.body) {
+        // Look for a preceding sibling that contains a tweet
+        let sibling = current.previousElementSibling;
+        while (sibling) {
+            const tweetTextEl = sibling.querySelector('[data-testid="tweetText"]');
+            if (tweetTextEl && tweetTextEl.textContent) {
+                return tweetTextEl.textContent.trim();
+            }
+            // If the sibling itself is the tweet
+            if (sibling.getAttribute('data-testid') === 'tweet') {
+                const text = sibling.querySelector('[data-testid="tweetText"]');
+                if (text && text.textContent) return text.textContent.trim();
+            }
+            sibling = sibling.previousElementSibling;
+        }
+        current = current.parentElement;
     }
-    current = current.parentElement;
-  }
 
-  // Scenario C: Fallback to the main tweet on the detail page if inline traversal fails
-  const mainTweetTextEl = document.querySelector('article[data-testid="tweet"] [data-testid="tweetText"]');
-  if (mainTweetTextEl && mainTweetTextEl.textContent) {
-    return mainTweetTextEl.textContent.trim();
-  }
+    // Scenario C: Fallback to the main tweet on the detail page if inline traversal fails
+    const mainTweetTextEl = document.querySelector('article[data-testid="tweet"] [data-testid="tweetText"]');
+    if (mainTweetTextEl && mainTweetTextEl.textContent) {
+        return mainTweetTextEl.textContent.trim();
+    }
 
-  return '';
+    return '';
 }
 
 // Action handler for button clicks
 function handleAIClick(toolbar: HTMLElement) {
-  const tweetText = extractTweetText(toolbar);
-  console.log('Scraped Tweet Text:', tweetText);
-  if (!tweetText) {
-    console.warn('Could not find tweet context to generate a reply.');
-    return;
-  }
-  // Next step will send this text to the background worker to fetch reply suggestions
+    const tweetText = extractTweetText(toolbar);
+    console.log('Scraped Tweet Text:', tweetText);
+    if (!tweetText) {
+        console.warn('Could not find tweet context to generate a reply.');
+        return;
+    }
+    // Next step will send this text to the background worker to fetch reply suggestions
 }
 
 // Set up MutationObserver to detect reply box toolbars dynamically
 function observeDOM() {
-  const observer = new MutationObserver(() => {
-    // Find all toolbar elements
+    const observer = new MutationObserver(() => {
+        // Find all toolbar elements
+        const toolbars = document.querySelectorAll('div[data-testid="toolBar"]');
+        toolbars.forEach((el) => {
+            if (el instanceof HTMLElement) {
+                injectAIButton(el);
+            }
+        });
+    });
+
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true,
+    });
+
+    // Initial check
     const toolbars = document.querySelectorAll('div[data-testid="toolBar"]');
     toolbars.forEach((el) => {
-      if (el instanceof HTMLElement) {
-        injectAIButton(el);
-      }
+        if (el instanceof HTMLElement) {
+            injectAIButton(el);
+        }
     });
-  });
-
-  observer.observe(document.body, {
-    childList: true,
-    subtree: true,
-  });
-
-  // Initial check
-  const toolbars = document.querySelectorAll('div[data-testid="toolBar"]');
-  toolbars.forEach((el) => {
-    if (el instanceof HTMLElement) {
-      injectAIButton(el);
-    }
-  });
 }
 
 // Initialize observer
