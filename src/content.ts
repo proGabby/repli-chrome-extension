@@ -76,9 +76,56 @@ function injectAIButton(toolbar: HTMLElement) {
   }
 }
 
-// Temporary action handler for button clicks
+// Helper to extract the text content of the tweet being replied to
+function extractTweetText(toolbar: HTMLElement): string {
+  // Scenario A: Reply is in a modal popup (e.g., clicking reply icon on feed)
+  const modal = toolbar.closest('[data-testid="sheetDialog"], [role="dialog"]');
+  if (modal) {
+    const tweetTextEl = modal.querySelector('[data-testid="tweetText"]');
+    if (tweetTextEl && tweetTextEl.textContent) {
+      return tweetTextEl.textContent.trim();
+    }
+  }
+
+  // Scenario B: Inline reply on a status detail page
+  // X structure places the composer inside a cell container. We go up and look for the preceding tweet.
+  let current: HTMLElement | null = toolbar;
+  while (current && current !== document.body) {
+    // Look for a preceding sibling that contains a tweet
+    let sibling = current.previousElementSibling;
+    while (sibling) {
+      const tweetTextEl = sibling.querySelector('[data-testid="tweetText"]');
+      if (tweetTextEl && tweetTextEl.textContent) {
+        return tweetTextEl.textContent.trim();
+      }
+      // If the sibling itself is the tweet
+      if (sibling.getAttribute('data-testid') === 'tweet') {
+        const text = sibling.querySelector('[data-testid="tweetText"]');
+        if (text && text.textContent) return text.textContent.trim();
+      }
+      sibling = sibling.previousElementSibling;
+    }
+    current = current.parentElement;
+  }
+
+  // Scenario C: Fallback to the main tweet on the detail page if inline traversal fails
+  const mainTweetTextEl = document.querySelector('article[data-testid="tweet"] [data-testid="tweetText"]');
+  if (mainTweetTextEl && mainTweetTextEl.textContent) {
+    return mainTweetTextEl.textContent.trim();
+  }
+
+  return '';
+}
+
+// Action handler for button clicks
 function handleAIClick(toolbar: HTMLElement) {
-  console.log('AI Reply clicked on toolbar:', toolbar);
+  const tweetText = extractTweetText(toolbar);
+  console.log('Scraped Tweet Text:', tweetText);
+  if (!tweetText) {
+    console.warn('Could not find tweet context to generate a reply.');
+    return;
+  }
+  // Next step will send this text to the background worker to fetch reply suggestions
 }
 
 // Set up MutationObserver to detect reply box toolbars dynamically
