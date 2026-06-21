@@ -29,7 +29,7 @@ export function injectAIButton(toolbar: HTMLElement): void {
   const button = document.createElement('button');
   button.type = 'button';
   button.className = 'ai-btn';
-  button.title = 'Generate AI Reply';
+  button.title = 'Generate AI Reply with Repli';
   button.innerHTML = AI_ICON_SVG;
 
   // Create dropdown element
@@ -148,7 +148,7 @@ function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement): void {
           if (errorMsg.includes('API key')) {
             dropdown.innerHTML = `
               <div class="error-msg">
-                Gemini API Key not set. Please click the X AI Reply extension icon in your Chrome toolbar to set it up.
+                Gemini API Key not set. Please click the Repli extension icon in your Chrome toolbar to set it up.
               </div>
             `;
           } else {

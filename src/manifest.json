@@ -1,8 +1,8 @@
 {
   "manifest_version": 3,
-  "name": "X AI Reply Assistant",
+  "name": "Repli",
   "version": "1.0.0",
-  "description": "Generate AI replies directly on X/Twitter",
+  "description": "Generate AI replies directly on X/Twitter using Repli",
   "action": {
     "default_popup": "src/popup.html"
   },
