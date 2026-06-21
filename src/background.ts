@@ -52,8 +52,8 @@ Tweet Context:
       contents: [{
         parts: [{ text: prompt }]
       }],
-      generationConfig: {
-        responseMimeType: 'application/json'
+      generation_config: {
+        response_mime_type: 'application/json'
       }
     }),
   });
