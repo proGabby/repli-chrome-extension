@@ -32,67 +32,81 @@ Rules for replies:
 Tweet Context:
 "${tweetText}"`;
 
-  const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+  const models = [
+    'gemini-3.5-flash',
+    'gemini-2.5-flash',
+    'gemini-2.0-flash',
+    'gemini-2.5-flash-lite'
+  ];
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({
-      contents: [{
-        parts: [{ text: prompt }]
-      }]
-    }),
-  });
+  let lastError: Error | null = null;
 
-  if (!response.ok) {
-    const errorData = await response.json().catch(() => ({}));
-    const message = errorData?.error?.message || `HTTP error! status: ${response.status}`;
-    
-    // Log available models for debugging
+  for (const model of models) {
     try {
-      const listUrl = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`;
-      const listRes = await fetch(listUrl);
-      if (listRes.ok) {
-        const listData = await listRes.json();
-        const modelNames = listData.models?.map((m: any) => m.name) || [];
-        console.warn('Supported models list for this API Key:', modelNames);
+      console.log(`Attempting AI reply generation with model: ${model}`);
+      const url = `https://generativelanguage.googleapis.com/v1/models/${model}:generateContent?key=${apiKey}`;
+
+      const response = await fetch(url, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          contents: [{
+            parts: [{ text: prompt }]
+          }]
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        const message = errorData?.error?.message || `HTTP error! status: ${response.status}`;
+        throw new Error(`${message}`);
       }
-    } catch (listErr) {
-      console.error('Failed to list supported models:', listErr);
+
+      const data = await response.json();
+      const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+
+      if (!rawText) {
+        throw new Error('Invalid response payload structure.');
+      }
+
+      // Clean up markdown code blocks if the model wrapped the JSON
+      let cleaned = rawText.trim();
+      if (cleaned.startsWith('```json')) {
+        cleaned = cleaned.substring(7);
+      } else if (cleaned.startsWith('```')) {
+        cleaned = cleaned.substring(3);
+      }
+      if (cleaned.endsWith('```')) {
+        cleaned = cleaned.substring(0, cleaned.length - 3);
+      }
+      cleaned = cleaned.trim();
+
+      const parsed = JSON.parse(cleaned);
+      if (Array.isArray(parsed) && parsed.length === 3 && parsed.every(item => typeof item === 'string')) {
+        console.log(`Successfully generated replies using model: ${model}`);
+        return parsed;
+      }
+      throw new Error('Response is not a valid JSON array of 3 strings.');
+    } catch (err: any) {
+      console.warn(`Model ${model} failed:`, err.message);
+      lastError = err;
     }
-
-    throw new Error(`Gemini API Error: ${message}`);
   }
 
-  const data = await response.json();
-  const rawText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-
-  if (!rawText) {
-    throw new Error('Invalid response received from Gemini.');
-  }
-
+  // Log supported models for debugging on final failure
   try {
-    // Clean up markdown code blocks if the model wrapped the JSON
-    let cleaned = rawText.trim();
-    if (cleaned.startsWith('```json')) {
-      cleaned = cleaned.substring(7);
-    } else if (cleaned.startsWith('```')) {
-      cleaned = cleaned.substring(3);
+    const listUrl = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`;
+    const listRes = await fetch(listUrl);
+    if (listRes.ok) {
+      const listData = await listRes.json();
+      const modelNames = listData.models?.map((m: any) => m.name) || [];
+      console.warn('Supported models list for this API Key:', modelNames);
     }
-    if (cleaned.endsWith('```')) {
-      cleaned = cleaned.substring(0, cleaned.length - 3);
-    }
-    cleaned = cleaned.trim();
-
-    const parsed = JSON.parse(cleaned);
-    if (Array.isArray(parsed) && parsed.length === 3 && parsed.every(item => typeof item === 'string')) {
-      return parsed;
-    }
-    throw new Error('Response is not an array of 3 strings.');
-  } catch (e) {
-    console.error('Failed to parse AI response:', rawText, e);
-    throw new Error('AI generated an invalid response format. Please try again.');
+  } catch (listErr) {
+    console.error('Failed to list supported models:', listErr);
   }
+
+  throw new Error(`All Gemini models failed. Last Error: ${lastError?.message || 'Unknown error'}`);
 }
