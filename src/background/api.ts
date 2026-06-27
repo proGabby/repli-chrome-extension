@@ -8,7 +8,7 @@ const STORAGE_KEYS = {
 /**
  * Contacts Gemini API to generate 3 reply options based on the given context.
  */
-export async function handleReplyGeneration(tweetText: string, customTone?: string): Promise<string[]> {
+export async function handleReplyGeneration(tweetText: string, customTone?: string, customInstructions?: string): Promise<string[]> {
   // Retrieve settings
   const settings = await chrome.storage.local.get([STORAGE_KEYS.API_KEY, STORAGE_KEYS.TONE]);
   const apiKey = settings[STORAGE_KEYS.API_KEY];
@@ -19,7 +19,7 @@ export async function handleReplyGeneration(tweetText: string, customTone?: stri
     throw new Error('API key is missing. Please click the extension icon in your toolbar to configure your Gemini API Key.');
   }
 
-  const prompt = `You are a helpful assistant generating short replies for X (Twitter).
+  let prompt = `You are a helpful assistant generating short replies for X (Twitter).
 Analyze the following tweet and generate exactly 3 distinct reply options.
 
 Rules for replies:
@@ -27,10 +27,14 @@ Rules for replies:
 2. Make them sound conversational, human, and natural (avoid generic AI corporate-speak).
 3. Do not include hashtags or emojis unless appropriate for the tone.
 4. Keep each reply under 280 characters.
-5. Output format MUST be a valid JSON array of exactly 3 strings. Example: ["reply option 1", "reply option 2", "reply option 3"]
+5. Output format MUST be a valid JSON array of exactly 3 strings. Example: ["reply option 1", "reply option 2", "reply option 3"]`;
 
-Tweet Context:
-"${tweetText}"`;
+  if (customInstructions) {
+    prompt += `\n\nCRITICAL - Additional Custom Instructions:
+- You MUST adjust your reply generation to follow these user instructions: "${customInstructions}"`;
+  }
+
+  prompt += `\n\nTweet Context:\n"${tweetText}"`;
 
   const models = [
     'gemini-3.5-flash',

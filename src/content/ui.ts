@@ -75,7 +75,7 @@ export function injectAIButton(toolbar: HTMLElement): void {
  * Handles the AI action click: extracts context, triggers the loading state,
  * and calls background scripts to query Gemini.
  */
-function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement): void {
+function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement, customInstructions?: string): void {
   console.log('AI Button clicked. Locating context...');
   const tweetText = extractTweetText(toolbar);
   console.log('Extracted Tweet Text context:', tweetText);
@@ -100,7 +100,7 @@ function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement): void {
     
     // Dispatch message to background service worker
     chrome.runtime.sendMessage(
-      { action: 'generate_replies', tweetText, tone },
+      { action: 'generate_replies', tweetText, tone, customInstructions },
       (response) => {
         if (chrome.runtime.lastError) {
           console.error('Runtime message error:', chrome.runtime.lastError);
@@ -155,7 +155,40 @@ function handleAIClick(toolbar: HTMLElement, dropdown: HTMLDivElement): void {
             dropdown.innerHTML = `<div class="error-msg">Error: ${errorMsg}</div>`;
           }
         }
+
+        // Render custom refinement prompt form at the bottom
+        renderCustomInputForm(toolbar, dropdown, customInstructions);
       }
     );
   });
+}
+
+function renderCustomInputForm(toolbar: HTMLElement, dropdown: HTMLDivElement, currentPromptValue: string = '') {
+  const form = document.createElement('form');
+  form.className = 'custom-input-form';
+  form.innerHTML = `
+    <input type="text" class="custom-input" placeholder="Refine (e.g. 'more witty')..." value="${currentPromptValue}" />
+    <button type="submit" class="custom-submit-btn" title="Regenerate">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor">
+        <path d="M2.5 12c0-5.247 4.253-9.5 9.5-9.5s9.5 4.253 9.5 9.5-4.253 9.5-9.5 9.5-9.5-4.253-9.5-9.5zm9.5-7.5c-4.136 0-7.5 3.364-7.5 7.5s3.364 7.5 7.5 7.5 7.5-3.364 7.5-7.5-3.364-7.5-7.5-7.5zm.5 10v-3h3v-2h-3v-3h-2v3h-3v2h3v3h2z"/>
+      </svg>
+    </button>
+  `;
+
+  // Prevent event propagation so clicking inside input doesn't close dropdown
+  form.addEventListener('click', (e) => {
+    e.stopPropagation();
+  });
+
+  form.addEventListener('submit', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const input = form.querySelector('.custom-input') as HTMLInputElement;
+    const customInstructions = input.value.trim();
+    if (customInstructions) {
+      handleAIClick(toolbar, dropdown, customInstructions);
+    }
+  });
+
+  dropdown.appendChild(form);
 }

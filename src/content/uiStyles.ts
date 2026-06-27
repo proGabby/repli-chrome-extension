@@ -112,4 +112,48 @@ export const SHADOW_DOM_CSS = `
   .error-msg a:hover {
     text-decoration: underline;
   }
+
+  /* Custom Prompt Form */
+  .custom-input-form {
+    display: flex;
+    align-items: center;
+    border-top: 1px solid #2f3336;
+    background-color: #15181c;
+    padding: 8px 12px;
+    gap: 8px;
+  }
+  .custom-input {
+    flex: 1;
+    background-color: #202327;
+    border: 1px solid #2f3336;
+    border-radius: 9999px;
+    padding: 6px 12px;
+    color: #f7f9f9;
+    font-size: 0.8rem;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .custom-input:focus {
+    border-color: rgb(29, 155, 240);
+  }
+  .custom-submit-btn {
+    background: none;
+    border: none;
+    padding: 0;
+    color: rgb(29, 155, 240);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    transition: background-color 0.2s;
+  }
+  .custom-submit-btn:hover {
+    background-color: rgba(29, 155, 240, 0.1);
+  }
+  .custom-submit-btn svg {
+    display: block;
+  }
 `;
