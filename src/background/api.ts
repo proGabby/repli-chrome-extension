@@ -33,6 +33,7 @@ Tweet Context:
 "${tweetText}"`;
 
   const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
+  // const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
 
   const response = await fetch(url, {
     method: 'POST',
@@ -49,7 +50,7 @@ Tweet Context:
   if (!response.ok) {
     const errorData = await response.json().catch(() => ({}));
     const message = errorData?.error?.message || `HTTP error! status: ${response.status}`;
-    
+
     // Log available models for debugging
     try {
       const listUrl = `https://generativelanguage.googleapis.com/v1/models?key=${apiKey}`;
