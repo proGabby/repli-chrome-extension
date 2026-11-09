@@ -1,17 +1,18 @@
 # Repli
 
-**Repli** is a lightweight, privacy-focused Chrome Extension that brings AI-powered reply generation directly into X (Twitter). Instead of staring at a blank text box, Repli analyzes the tweet context and provides 3 distinct, tone-tailored reply options within seconds using the **Gemini 3.5 Flash** model.
+**Repli** is a lightweight, privacy-focused Chrome Extension that brings AI-powered reply and comment generation directly into **X (Twitter)** and **LinkedIn**. Instead of staring at a blank text box, Repli analyzes the post context and provides 3 distinct, tone-tailored reply options within seconds using Google's **Gemini 1.5 Flash** model.
 
 Select your preferred option, tweak it, and post it yourself!
 
 ---
 
 ## Features
-- **Seamless Integration:** Adds a native-looking Spark button directly into X's reply input toolbar.
-- **Context-Aware Suggestions:** Scrapes the context of the tweet you are replying to (works in modals, detail views, and inline threads).
+- **Multi-Platform Integration:** Adds a native Spark button directly into reply/comment toolbars on both **X (Twitter)** and **LinkedIn**.
+- **Context-Aware Suggestions:** Scrapes the context of the tweet or LinkedIn post/comment you are replying to (works in modals, detail views, feed posts, and inline threads).
+- **Platform-Optimized Prompts:** Tailors replies specifically for Twitter (punchy, &le; 280 chars) or LinkedIn (insightful, professional networking commentary).
+- **Editor State Integration:** Uses clipboard paste for X's Draft.js editor and native Quill DOM manipulation for LinkedIn's `.ql-editor`.
 - **Tone Customization:** Configure your default reply tone (Supportive, Witty, Professional, Contribution, Agree, Disagree) in the extension settings.
-- **Draft.js React State Integration:** Uses clipboard injection workarounds to update X's rich editor state cleanly, enabling the native "Post" button.
-- **Shadow DOM Encapsulation:** Protects the UI overlay styles from X's stylesheet rules.
+- **Shadow DOM Encapsulation:** Protects the UI overlay styles from page stylesheet rules.
 - **Secure API Key Storage:** Keys are saved locally in the browser (`chrome.storage.local`) and called directly via background service workers.
 
 ---
