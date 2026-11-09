@@ -5,10 +5,16 @@ const STORAGE_KEYS = {
   TONE: 'x_ai_reply_default_tone',
 };
 
+export type Platform = 'x' | 'linkedin';
+
 /**
  * Contacts Gemini API to generate 3 reply options based on the given context.
  */
-export async function handleReplyGeneration(tweetText: string, customTone?: string): Promise<string[]> {
+export async function handleReplyGeneration(
+  contextText: string,
+  customTone?: string,
+  platform: Platform = 'x'
+): Promise<string[]> {
   // Retrieve settings
   const settings = await chrome.storage.local.get([STORAGE_KEYS.API_KEY, STORAGE_KEYS.TONE]);
   const apiKey = settings[STORAGE_KEYS.API_KEY];
@@ -19,7 +25,21 @@ export async function handleReplyGeneration(tweetText: string, customTone?: stri
     throw new Error('API key is missing. Please click the extension icon in your toolbar to configure your Gemini API Key.');
   }
 
-  const prompt = `You are a helpful assistant generating short replies for X (Twitter).
+  const prompt = platform === 'linkedin'
+    ? `You are an insightful professional networking assistant generating comments for a LinkedIn post.
+Analyze the following post and generate exactly 3 distinct comment options.
+
+Rules for comments:
+1. Tone must be: "${tone}".
+2. Make them sound authentic, professional, conversational, and human (avoid corporate buzzwords, hollow clichés, or excessive flattery).
+3. Add meaningful perspective, share a relevant insight, or ask an engaging question to foster genuine discussion.
+4. Keep each comment concise and impactful (1 to 3 sentences, under 350 characters).
+5. Do not include hashtags unless directly relevant to the topic.
+6. Output format MUST be a valid JSON array of exactly 3 strings. Example: ["comment option 1", "comment option 2", "comment option 3"]
+
+LinkedIn Post Context:
+"${contextText}"`
+    : `You are a helpful assistant generating short replies for X (Twitter).
 Analyze the following tweet and generate exactly 3 distinct reply options.
 
 Rules for replies:
@@ -30,7 +50,7 @@ Rules for replies:
 5. Output format MUST be a valid JSON array of exactly 3 strings. Example: ["reply option 1", "reply option 2", "reply option 3"]
 
 Tweet Context:
-"${tweetText}"`;
+"${contextText}"`;
 
   const url = `https://generativelanguage.googleapis.com/v1/models/gemini-3.5-flash:generateContent?key=${apiKey}`;
   // const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`;
